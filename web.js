@@ -6,7 +6,9 @@ var buf = new Buffer(fs.readFileSync('/home/ubuntu/bitstarter/index.html'));
 var app = express.createServer(express.logger());
 
 app.get('/', function(request, response) {
-  response.send(buf.toString());
+  var fs = require('fs');
+  var buf = new Buffer(fs.readFileSync('/home/ubuntu/bitstarter/index.html'));
+  response.send(buf.toString('utc 8'));
 });
 
 var port = process.env.PORT || 5000;
