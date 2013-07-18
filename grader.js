@@ -34,29 +34,30 @@ var assertFileExists = function(infile) {
     var instr = infile.toString();
     if(!fs.existsSync(instr)) {
         console.log("%s does not exist. Exiting.", instr);
-        process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
+        // http://nodejs.org/api/process.html#process_process_exit_code
+        process.exit(1); 
     }
     return instr;
-};
-
-// should get the url, write the file, pass the filename as result
-var assertUrlExists = function(urladdress) {
-    var respData = restler.get(urladdress).on('complete', function(result) {
-      if (result instanceof Error) {
-        console.log("%s does not exist. Exiting.", url);
-        process.exit(1);
-      } else {
-        return result
-      }
-    });
-    console.log(respData);
-    fs.writeFileSync(URLHTMLFILE_DEFAULT,respData)
-    return URLHTMLFILE_DEFAULT;
 };
 
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
+
+
+
+var checkHtmlFromUrl = function(url) {
+    restler.get(url).on('complete', function(result) {
+    if (result instanceof Error) {
+	console.log("%s returned error. Exiting.", url);
+	process.exit(1);
+    } else {
+	fs.writeFileSync(URLHTMLFILE_DEFAULT,result);
+	checkJson = checkHtmlFile(URLHTMLFILE_DEFAULT, program.checks);
+    }
+    });
+};
+
 
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
@@ -70,9 +71,11 @@ var checkHtmlFile = function(htmlfile, checksfile) {
         var present = $(checks[ii]).length > 0;
         out[checks[ii]] = present;
     }
-    return out;
+    var outJson = JSON.stringify(out, null, 4);
+    console.log(outJson);
+    return outJson;
 };
-
+ 
 var clone = function(fn) {
     // Workaround for commander.js issue.
     // http://stackoverflow.com/a/6772648
@@ -84,17 +87,19 @@ var checkJson = '';
 if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-        .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .option('-u, --url <external_url>', 'External Url', clone(assertUrlExists), URL_DEFAULT)
+        .option('-f, --file [html_file]', 'Path to index.html')
+        .option('-u, --url [external_url]', 'External Url')
         .parse(process.argv);
     if (program.file) {
+	console.log("checking file");
 	checkJson = checkHtmlFile(program.file, program.checks);
+    } else if (program.url) {
+	console.log("checking url");
+        checkJson = checkHtmlFromUrl(program.url, program.checks);
+    } else {
+	console.log("No file or url. Exiting.");
+	process.exit(1);
     }
-    if (program.url) {
-        checkJson = checkHtmlFile(URLHTMLFILE_DEFAULT, program.checks);
-    }
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
