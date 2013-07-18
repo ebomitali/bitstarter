@@ -44,8 +44,6 @@ var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
 
-
-
 var checkHtmlFromUrl = function(url) {
     restler.get(url).on('complete', function(result) {
     if (result instanceof Error) {
@@ -57,7 +55,6 @@ var checkHtmlFromUrl = function(url) {
     }
     });
 };
-
 
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
